@@ -18,24 +18,23 @@ function memory_score() {
   sysbench memory run | grep "per second" | cut -d '(' -f 2 | cut -d ' ' -f 1
 }
 
-function fileio_read_score() {
-  sysbench fileio --file-test-mode=rndrd run | grep "reads/s" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//'
-}
-
-function fileio_write_score() {
-  sysbench fileio --file-test-mode=rndwr run | grep "writes/s" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//'
+function fileio_scores() {
+  local results=$(sysbench fileio --file-test-mode=rndrw --time=300 --threads=8 --file-io-mode=sync --file-extra-flags=direct run)
+  local read_score=$(echo "$results" | grep "read, MiB/s" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//')
+  local write_score=$(echo "$results" | grep "written, MiB/s" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//')
+  echo "$read_score $write_score"
 }
 
 echo "Preparing benchmarks ..." >&2
-sysbench fileio prepare > /dev/null
+sysbench fileio prepare >&2
 echo "Benchmarking CPU ..." >&2
 readonly cpu_score=$(cpu_score)
 echo "Benchmarking memory ..." >&2
 readonly memory_score=$(memory_score)
-echo "Benchmarking file reads ..." >&2
-readonly fileio_read_score=$(fileio_read_score)
-echo "Benchmarking file writes ..." >&2
-readonly fileio_write_score=$(fileio_write_score)
+echo "Benchmarking file i/o ..." >&2
+readonly fileio_scores=$(fileio_scores)
+readonly fileio_read_score=$(echo $fileio_scores | cut -d ' ' -f 1)
+readonly fileio_write_score=$(echo $fileio_scores | cut -d ' ' -f 2)
 echo "Results:" >&2
 
 readonly HTTP_DIR=/http
