@@ -1,6 +1,10 @@
 FROM alpine:3.22
 ARG PORT=8080
 ENV PORT=$PORT
+ARG TIME=300
+ENV TIME=$TIME
+ARG SIZE=2G
+ENV SIZE=$SIZE
 
 RUN apk add --no-cache lighttpd sysbench
 

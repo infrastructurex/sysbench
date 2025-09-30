@@ -1,4 +1,7 @@
 #!/bin/sh
+# shellcheck disable=SC2155
+# shellcheck disable=SC3043
+# shellcheck disable=SC2046
 set -e
 
 if [ $# -eq 0 ]; then
@@ -10,23 +13,23 @@ else
     exit 1
 fi
 
-function cpu_score() {
+cpu_score() {
   sysbench cpu run | grep "events per second" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//'
 }
 
-function memory_score() {
+memory_score() {
   sysbench memory run | grep "per second" | cut -d '(' -f 2 | cut -d ' ' -f 1
 }
 
-function fileio_scores() {
-  local results=$(sysbench fileio --file-test-mode=rndrw --time=300 --threads=8 --file-io-mode=sync --file-extra-flags=direct run)
+fileio_scores() {
+  local results=$(sysbench fileio --file-test-mode=rndrw --file-total-size=$SIZE --time=$TIME --threads=8 --file-io-mode=sync --file-extra-flags=direct run)
   local read_score=$(echo "$results" | grep "read, MiB/s" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//')
   local write_score=$(echo "$results" | grep "written, MiB/s" | cut -d ':' -f 2 | sed 's/^[[:space:]]*//')
   echo "$read_score $write_score"
 }
 
 echo "Preparing benchmarks ..." >&2
-sysbench fileio prepare >&2
+sysbench fileio --file-total-size=$SIZE prepare >&2
 echo "Benchmarking CPU ..." >&2
 readonly cpu_score=$(cpu_score)
 echo "Benchmarking memory ..." >&2
@@ -60,7 +63,7 @@ server.document-root = "$HTTP_DIR"
 server.port = $PORT
 _EOF_
 
-function cleanup() {
+cleanup() {
   echo "Done." >&2
   exit 0
 }
